@@ -375,7 +375,7 @@
                             Round(precio9 * (1 + (impuestos.valor/100)),2) as PRECIO9,
                             Round(precio10 * (1 + (impuestos.valor/100)),2) as PRECIO10, 
                             prods.existencia, unidad, minimo, maximo, observ, kit, serie, lote, invent, imagen, paraventa, curso, prods.usufecha, prods.usuhora, exportado, en_venta, granel, peso, bajocosto, bloqueado, u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, acaja, modificaprecio, fraccionario, iespecial, c2, c3, c4, c5, c6, c7, c8, c9, c10, modelo, color, talla, speso, etiqueta, numero, carton, unidadrecibe, unidadempaque, sinvolumen, presentacion, servicio, numeroservicios, claveproveedor, dp, familia, subfamilia, subfam1, subfam2, preciousd, costousd, puntos, autocodigo, tiempoaire, ensambladoenlinea, claveprodserv, claveunidad, version, GUID 
-                            FROM prods LEFT JOIN impuestos ON prods.impuesto = impuestos.impuesto WHERE prods.descrip LIKE :descrip";
+                            FROM prods LEFT JOIN impuestos ON prods.impuesto = impuestos.impuesto WHERE prods.descrip LIKE :descrip or prods.articulo like :descrip";
             $arrParams = array(":descrip" => '%' . $descrip . '%');
             $request = $this->select_param($sql, $arrParams);
             return $request;
