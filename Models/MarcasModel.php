@@ -54,7 +54,7 @@
 
     public function getMarcas()
     {
-        $sql = "SELECT marca as nombre, descrip as descripcion, usuario, usufecha, usuhora FROM marcas ORDER BY descrip";
+        $sql = "SELECT idmarca, marca , descrip , status, usuario, usufecha, usuhora FROM marcas ORDER BY descrip";
         $request = $this->select_all($sql);
         return $request;
     }
@@ -62,7 +62,7 @@
     public function getMarca(string $marca)
     {
         $this->marca = $marca;
-        $sql = "SELECT marca as nombre, descrip as descripcion, usuario, usufecha, usuhora FROM marcas WHERE marca = :marca";
+        $sql = "SELECT idmarca, marca, descrip, status, usuario, usufecha, usuhora FROM marcas WHERE marca = :marca";
         $arrParams = array(":marca" => $this->marca);
         $request = $this->select($sql, $arrParams);
         return $request;

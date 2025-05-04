@@ -1,131 +1,127 @@
-<!-- Considerando las tablas pedido y detalle_pedido, crear el modelo para la API. 
- Columnas de la tabla pedido: idpedido, referenciacobro, idtransaccionpaypal, datospaypal, personaid, fecha, costo_envio, monto, tipopagoid, direccion_envio, descargado, estatus
- Columnas de la tabla detalle_pedido: id, pedidoid, productoid, precio, cantidad. -->
-//
 <?php
-    class PedidosModel extends Mysql
-    {
-        private $idpedido;
-        private $referenciacobro;
-        private $idtransaccionpaypal;
-        private $datospaypal;
-        private $personaid;
-        private $fecha;
-        private $costo_envio;
-        private $monto;
-        private $tipopagoid;
-        private $direccion_envio;
-        private $descargado;
-        private $estatus;
-        private $id;
-        private $pedidoid;
-        private $productoid;
-        private $precio;
-        private $cantidad;
-        public function __construct()
-        {
-            parent::__construct();
-        }
+class PedidosModel extends Mysql
+{
+	private $objCategoria;
+	public function __construct()
+	{
+		parent::__construct();
+	}
+	public function selectPedidos($limite)
+	{
 
-        public function setPedido(string $referenciacobro, string $idtransaccionpaypal, string $datospaypal, string $personaid, string $fecha, string $costo_envio, string $monto, string $tipopagoid, string $direccion_envio, string $descargado, string $estatus)
-        {
-            $request = [];
-            $this->referenciacobro = $referenciacobro;
-            $this->idtransaccionpaypal = $idtransaccionpaypal;
-            $this->datospaypal = $datospaypal;
-            $this->personaid = $personaid;
-            $this->fecha = $fecha;
-            $this->costo_envio = $costo_envio;
-            $this->monto = $monto;
-            $this->tipopagoid = $tipopagoid;
-            $this->direccion_envio = $direccion_envio;
-            $this->descargado = $descargado;
-            $this->estatus = $estatus;
+		$limit = intval($limite);
+		$request = array();
+		$sql = "SELECT p.idpedido,
+							DATE_FORMAT(p.fecha, '%d/%m/%Y') as fecha,
+							p.costo_envio,
+							p.monto,
+							t.tipopago,
+							p.direccion_envio,
+							p.status,
+							p.descargado
+					FROM pedido as p
+					INNER JOIN tipopago t
+					ON p.tipopagoid = t.idtipopago WHERE p.descargado = 0 LIMIT " . $limit;
+		$requestPedido = $this->select_all($sql);
 
-            $sql = "SELECT referenciacobro from pedido where referenciacobro = :referenciacobro";
-            $arrParams = array(":referenciacobro" => $this->referenciacobro
-            );
+		if (!empty($requestPedido)) {
+			$auxFinal = array();
+			foreach ($requestPedido as $row) {
+				$idpedido = $row['idpedido'];
 
-            $request = $this->select($sql, $arrParams);
+				$sql_detalle = "SELECT p.ARTICULO,
+											p.DESCRIP as producto,
+											d.precio,
+											d.cantidad
+									FROM detalle_pedido d
+									INNER JOIN prods p
+									ON d.productoid = p.ARTICULO
+									WHERE d.pedidoid = $idpedido";
 
-            if (!is_countable($request)) {
-                    
-                    $query_insert  = "INSERT INTO pedido(referenciacobro,idtransaccionpaypal,datospaypal,personaid,fecha,costo_envio,monto,tipopagoid,direccion_envio,descargado,estatus) VALUES(:referenciacobro,:idtransaccionpaypal,:datospaypal,:personaid,:fecha,:costo_envio,:monto,:tipopagoid,:direccion_envio,:descargado,:estatus)";
-                    $arrData = array(":referenciacobro" => $this->referenciacobro,
-                        ":idtransaccionpaypal" => $this->idtransaccionpaypal,
-                        ":datospaypal" => $this->datospaypal,
-                        ":personaid" => $this->personaid,
-                        ":fecha" => $this->fecha,
-                        ":costo_envio" => $this->costo_envio,
-                        ":monto" => $this->monto,
-                        ":tipopagoid" => $this->tipopagoid,
-                        ":direccion_envio" => $this->direccion_envio,
-                        ":descargado" => $this->descargado,
-                        ":estatus" => $this->estatus);
-                    $request_insert = $this->insert($query_insert, $arrData);
-                    $sql = "SELECT referenciacobro from pedido where referenciacobro = :referenciacobro";
-                    $arrParams = array(":referenciacobro" => $this->referenciacobro);
-    
-                    $request_insert = $this->select($sql, $arrParams);
-    
-                    $returnData = $request_insert;
-                } else {
-                    $returnData = "exist";
-                }
-                return $returnData;
-            }
+				$requestProductos = $this->select_all($sql_detalle);
+				$row['productos'] = $requestProductos;
+				$auxFinal[] = $row;
+			}
+			$request = array(
+				'orden' => $auxFinal
+			);
+		}
+		return $request;
+	}
 
-            public function getPedido(string $referenciacobro)
-            {
-                $this->referenciacobro = $referenciacobro;
-                $sql = "SELECT idpedido, referenciacobro, idtransaccionpaypal, datospaypal, personaid, fecha, costo_envio, monto, tipopagoid, direccion_envio, descargado, estatus FROM pedido WHERE referenciacobro = :referenciacobro";
-                $arrParams = array(":referenciacobro" => $this->referenciacobro);
-                $request = $this->select($sql, $arrParams);
-                return $request;
-            }
 
-            public function setDetallePedido(string $pedidoid, string $productoid, string $precio, string $cantidad)
-            {
-                $request = [];
-                $this->pedidoid = $pedidoid;
-                $this->productoid = $productoid;
-                $this->precio = $precio;
-                $this->cantidad = $cantidad;
+	public function selectPedido($idpedido)
+	{
 
-                $sql = "SELECT pedidoid from detalle_pedido where pedidoid = :pedidoid";
-                $arrParams = array(":pedidoid" => $this->pedidoid
-                );
+		$limit = intval($idpedido);
+		$request = array();
+		$sql = "SELECT p.idpedido,
+							DATE_FORMAT(p.fecha, '%d/%m/%Y') as fecha,
+							p.costo_envio,
+							p.monto,
+							t.tipopago,
+							p.direccion_envio,
+							p.status,
+							p.descargado
+					FROM pedido as p
+					INNER JOIN tipopago t
+					ON p.tipopagoid = t.idtipopago WHERE p.idpedido = $idpedido";
+		$requestPedido = $this->select_all($sql);
 
-                $request = $this->select($sql, $arrParams);
+		if (!empty($requestPedido)) {
+			$auxFinal = array();
+			foreach ($requestPedido as $row) {
+				$idpedido = $row['idpedido'];
 
-                if (!is_countable($request)) {
-                    
-                    $query_insert  = "INSERT INTO detalle_pedido(pedidoid,productoid,precio,cantidad) VALUES(:pedidoid,:productoid,:precio,:cantidad)";
-                    $arrData = array(":pedidoid" => $this->pedidoid,
-                        ":productoid" => $this->productoid,
-                        ":precio" => $this->precio,
-                        ":cantidad" => $this->cantidad);
-                    $request_insert = $this->insert($query_insert, $arrData);
-                    $sql = "SELECT pedidoid from detalle_pedido where pedidoid = :pedidoid";
-                    $arrParams = array(":pedidoid" => $this->pedidoid);
-    
-                    $request_insert = $this->select($sql, $arrParams);
-    
-                    $returnData = $request_insert;
-                } else {
-                    $returnData = "exist";
-                }
-                return $returnData;
-            }
+				$sql_detalle = "SELECT p.ARTICULO,
+											p.DESCRIP as producto,
+											d.precio,
+											d.cantidad
+									FROM detalle_pedido d
+									INNER JOIN prods p
+									ON d.productoid = p.ARTICULO
+									WHERE d.pedidoid = $idpedido";
 
-            public function getDetallePedido(string $pedidoid)
-            {
-                $this->pedidoid = $pedidoid;
-                $sql = "SELECT id, pedidoid, productoid, precio, cantidad FROM detalle_pedido WHERE pedidoid = :pedidoid";
-                $arrParams = array(":pedidoid" => $this->pedidoid);
-                $request = $this->select($sql, $arrParams);
-                return $request;
-            }
+				$requestProductos = $this->select_all($sql_detalle);
+				$row['productos'] = $requestProductos;
+				$auxFinal[] = $row;
+			}
+			$request = array(
+				'orden' => $auxFinal
+			);
+		}
+		return $request;
+	}
 
-        }
-?>
+	public function updatePedido($idpedido, $idtransaccion = null, $status = null, $descargado = null)
+	{
+		$aux = array();
+
+		$updates = [];
+		if (!empty($idtransaccion)) {
+			$updates[] = "idtransaccion = ?";
+			array_push($aux, $idtransaccion);
+		}
+		if (!empty($status)) {
+			$updates[] = "status = ?";
+			array_push($aux, $status);
+
+		}
+		if (!is_null($descargado)) {
+			$updates[] = "descargado = ?";
+			array_push($aux, $descargado);
+
+		}
+
+		if (empty($updates)) {
+			http_response_code(400);
+			echo json_encode(["status" => false, "msg" => "No hay datos para actualizar."]);
+			return;
+		} else {
+			$sql = "UPDATE pedido SET " . implode(", ", $updates) . " WHERE idpedido = $idpedido";
+			$request = $this->update($sql, $aux);
+			return $request;
+		}
+	}
+
+}
